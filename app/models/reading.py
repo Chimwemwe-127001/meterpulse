@@ -14,6 +14,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.meter import Meter
     from app.models.user import User
+    from app.models.alert import Alert
 
 
 class Reading(Base):
@@ -61,6 +62,11 @@ class Reading(Base):
     # Relationships
     meter: Mapped["Meter"] = relationship("Meter", back_populates="readings")
     submitter: Mapped["User"] = relationship("User", back_populates="readings")
+    alerts: Mapped[list["Alert"]] = relationship(
+        "Alert",
+        back_populates="reading",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Reading {self.meter_id} value={self.value}>"

@@ -19,6 +19,13 @@ from app.schemas.reading import (
     ReadingSummaryResponse,
     DailySummary,
 )
+from app.schemas.alert import (
+    AlertResponse,
+    AlertListResponse,
+    AlertGenerated,
+    ReadingWithAlerts,
+    AlertResolve,
+)
 
 __all__ = [
     "UserCreate",
@@ -35,4 +42,9 @@ __all__ = [
     "ReadingListResponse",
     "ReadingSummaryResponse",
     "DailySummary",
+    "AlertResponse",
+    "AlertListResponse",
+    "AlertGenerated",
+    "ReadingWithAlerts",
+    "AlertResolve",
 ]

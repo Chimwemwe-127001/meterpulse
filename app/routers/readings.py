@@ -22,7 +22,9 @@ from app.schemas.reading import (
     ReadingSummaryResponse,
     DailySummary,
 )
+from app.schemas.alert import ReadingWithAlerts, AlertGenerated
 from app.services.auth import get_current_user
+from app.services.anomaly import detect_anomalies
 
 router = APIRouter(prefix="/meters/{meter_id}/readings", tags=["Readings"])
 
@@ -38,24 +40,25 @@ def get_meter_or_404(meter_id: UUID, db: Session) -> Meter:
     return meter
 
 
-@router.post("", response_model=ReadingResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ReadingWithAlerts, status_code=status.HTTP_201_CREATED)
 async def submit_reading(
     meter_id: UUID,
     reading_data: ReadingCreate,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
-) -> Reading:
+):
     """
     Submit a new meter reading.
     
     Automatically calculates consumption (delta from previous reading).
+    Runs anomaly detection and creates alerts if anomalies found.
     
     - **value**: Cumulative meter reading value
     - **recorded_at**: Time the reading was physically taken
     """
     meter = get_meter_or_404(meter_id, db)
     
-    # Get the previous reading to calculate consumption
+    # Get most recent reading to calculate consumption delta
     previous_reading = (
         db.query(Reading)
         .filter(Reading.meter_id == meter_id)
@@ -79,7 +82,34 @@ async def submit_reading(
     db.commit()
     db.refresh(new_reading)
     
-    return new_reading
+    # Run anomaly detection (it fetches previous readings internally)
+    alerts = detect_anomalies(
+        meter_id=meter_id,
+        new_reading=new_reading,
+        db=db,
+    )
+    
+    # Convert alerts to response format
+    alerts_generated = [
+        AlertGenerated(
+            id=alert.id,
+            alert_type=alert.alert_type,
+            severity=alert.severity,
+            message=alert.message,
+        )
+        for alert in alerts
+    ]
+    
+    return ReadingWithAlerts(
+        id=new_reading.id,
+        meter_id=new_reading.meter_id,
+        value=new_reading.value,
+        consumption=new_reading.consumption,
+        recorded_at=new_reading.recorded_at,
+        submitted_by=new_reading.submitted_by,
+        created_at=new_reading.created_at,
+        alerts_generated=alerts_generated,
+    )
 
 
 @router.get("", response_model=ReadingListResponse)

@@ -14,6 +14,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.reading import Reading
+    from app.models.alert import Alert
 
 
 class Meter(Base):
@@ -74,6 +75,11 @@ class Meter(Base):
     owner: Mapped["User"] = relationship("User", back_populates="meters")
     readings: Mapped[list["Reading"]] = relationship(
         "Reading", 
+        back_populates="meter",
+        cascade="all, delete-orphan",
+    )
+    alerts: Mapped[list["Alert"]] = relationship(
+        "Alert",
         back_populates="meter",
         cascade="all, delete-orphan",
     )
