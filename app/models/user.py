@@ -4,11 +4,16 @@ Represents system users (admins and operators).
 """
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 from sqlalchemy import String, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.meter import Meter
+    from app.models.reading import Reading
 
 
 class User(Base):
@@ -56,6 +61,10 @@ class User(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    # Relationships
+    meters: Mapped[list["Meter"]] = relationship("Meter", back_populates="owner")
+    readings: Mapped[list["Reading"]] = relationship("Reading", back_populates="submitter")
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"
