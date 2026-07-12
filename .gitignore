@@ -38,3 +38,6 @@ build/
 
 # Test guides
 TESTING-GUIDE.md
+
+# Keep the environment template tracked
+!.env.example

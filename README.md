@@ -35,13 +35,17 @@ cp .env.example .env
 
 # Edit .env with your settings:
 # - DATABASE_URL: Your PostgreSQL connection string
-# - SECRET_KEY: A secure random string for JWT signing
+#   (or sqlite:///./meterpulse.db for quick local development)
+# - SECRET_KEY: Required — the app refuses to start without it.
+#   Generate: python -c "import secrets; print(secrets.token_hex(32))"
+# - CORS_ORIGINS: JSON list of allowed frontend origins
 ```
 
 ### Database Setup
 
 ```bash
-# Run migrations
+# Run migrations (Alembic is the single schema authority;
+# tables are not auto-created at startup)
 alembic upgrade head
 ```
 
@@ -49,6 +53,13 @@ alembic upgrade head
 
 ```bash
 uvicorn app.main:app --reload
+```
+
+### Run Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
 ```
 
 ### API Documentation
@@ -65,7 +76,7 @@ uvicorn app.main:app --reload
 | POST | `/auth/login` | Get JWT token |
 | GET | `/auth/me` | Get current user |
 
-### Meters (Coming in Increment 2)
+### Meters
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/meters` | Register meter |
@@ -74,14 +85,14 @@ uvicorn app.main:app --reload
 | PUT | `/meters/{id}` | Update meter |
 | DELETE | `/meters/{id}` | Delete meter |
 
-### Readings (Coming in Increment 2)
+### Readings
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/meters/{id}/readings` | Submit reading |
 | GET | `/meters/{id}/readings` | List readings |
 | GET | `/meters/{id}/readings/summary` | Aggregated data |
 
-### Alerts (Coming in Increment 3)
+### Alerts
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/alerts` | List all alerts |
@@ -101,10 +112,19 @@ meterpulse/
 │   ├── routers/         # API endpoints
 │   └── services/        # Business logic
 ├── migrations/          # Alembic migrations
+├── tests/               # Pytest suite
 ├── requirements.txt
 ├── .env.example
 └── Procfile            # Railway deployment
 ```
+
+## Access Control
+
+- All meter, reading, and alert endpoints are scoped at the object
+  level: operators only see and modify meters they own; admins see all.
+- New accounts are always created as operators — admin promotion is a
+  separate administrative action, never a registration field.
+- Alert resolution is audited (`resolved_by`, `resolved_at`).
 
 ## Tech Stack
 

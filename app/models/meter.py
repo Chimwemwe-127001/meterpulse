@@ -5,9 +5,8 @@ Represents utility metering devices (electricity, water, gas).
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
-from sqlalchemy import String, Text, DateTime, ForeignKey, func
+from sqlalchemy import String, Text, DateTime, ForeignKey, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
 
 from app.database import Base
 
@@ -20,14 +19,14 @@ if TYPE_CHECKING:
 class Meter(Base):
     """
     A registered utility metering device tracked by the system.
-    
+
     Utility Types: electricity, water, gas
     Status: active, inactive, flagged
     """
     __tablename__ = "meters"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
     )
@@ -55,9 +54,10 @@ class Meter(Base):
         nullable=False,
     )
     owner_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("users.id"),
         nullable=False,
+        index=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -74,7 +74,7 @@ class Meter(Base):
     # Relationships
     owner: Mapped["User"] = relationship("User", back_populates="meters")
     readings: Mapped[list["Reading"]] = relationship(
-        "Reading", 
+        "Reading",
         back_populates="meter",
         cascade="all, delete-orphan",
     )

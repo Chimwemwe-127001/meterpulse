@@ -1,30 +1,23 @@
 """
 MeterPulse API - Main Application
 Utility Meter Reading, Anomaly Detection & Alert Management System
-"""
-from contextlib import asynccontextmanager
 
+Database schema is managed exclusively by Alembic (`alembic upgrade head`);
+tables are not auto-created at startup, so migration history stays the
+single source of truth.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from sqlalchemy import text
 
 from app.config import get_settings
-from app.database import engine, Base
+from app.database import engine
+from app.rate_limit import limiter
 from app.routers import auth_router, meters_router, readings_router, alerts_router, meter_alerts_router
 
 settings = get_settings()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Application lifespan handler.
-    Creates database tables on startup (development only).
-    """
-    # Startup: Create tables if they don't exist
-    Base.metadata.create_all(bind=engine)
-    yield
-    # Shutdown: cleanup if needed
-
 
 app = FastAPI(
     title=settings.app_name,
@@ -46,19 +39,25 @@ A RESTful API backend for utility meter management, featuring:
 3. Include the token in requests: `Authorization: Bearer <token>`
 """,
     version=settings.app_version,
-    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
-# CORS middleware for frontend integration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Configure for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Rate limiting (login/register throttling per NIST SP 800-63B §5.2.2)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS: explicit origin allowlist from settings. Bearer tokens travel in
+# the Authorization header, which is not a CORS "credential", so
+# allow_credentials stays False (avoids wildcard+credentials, CWE-942).
+if settings.cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Include routers
 app.include_router(auth_router)
@@ -79,10 +78,17 @@ async def root():
 
 
 @app.get("/health", tags=["Health"])
-async def health_check():
-    """Detailed health check."""
+def health_check():
+    """Detailed health check. Actually probes the database."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        database = "connected"
+    except Exception:
+        database = "unreachable"
+
     return {
-        "status": "healthy",
-        "database": "connected",
+        "status": "healthy" if database == "connected" else "degraded",
+        "database": database,
         "version": settings.app_version,
     }

@@ -7,12 +7,13 @@ python-multipart==0.0.9
 # Database
 sqlalchemy==2.0.35
 alembic==1.13.2
-aiosqlite==0.20.0
 
 # Authentication
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
 bcrypt==4.2.0
+
+# Rate limiting
+slowapi==0.1.9
 
 # Validation & Settings
 pydantic==2.9.2

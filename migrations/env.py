@@ -9,7 +9,7 @@ from alembic import context
 
 from app.config import get_settings
 from app.database import Base
-from app.models import User  # Import all models
+from app.models import User, Meter, Reading, Alert  # noqa: F401 - register all models
 
 config = context.config
 settings = get_settings()

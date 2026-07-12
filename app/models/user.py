@@ -5,9 +5,8 @@ Represents system users (admins and operators).
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
-from sqlalchemy import String, DateTime, func
+from sqlalchemy import String, DateTime, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
 
 from app.database import Base
 
@@ -19,7 +18,7 @@ if TYPE_CHECKING:
 class User(Base):
     """
     User account for authentication and authorization.
-    
+
     Roles:
         - admin: Full access including meter deletion
         - operator: Standard access for meter management and readings
@@ -27,7 +26,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
     )

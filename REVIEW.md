@@ -1,5 +1,15 @@
 # MeterPulse API — Code Review
 
+> **Remediation status:** All findings below have been addressed in the
+> commit(s) following this review on this branch — object-level
+> authorization, registration hardening, fail-fast secrets, CORS
+> allowlist, single-transaction submissions with row locking, ordering
+> enforcement, median/MAD spike detection with a minimum-sample gate and
+> time-normalized rates, `Numeric` storage, Alembic as sole schema
+> authority, sync handlers, throttling with a constant-time login path,
+> audited alert resolution, and a 39-test regression suite. This
+> document is preserved as the record of *why* each change was made.
+
 **Scope:** Full codebase at commit `04cb154` (app/, migrations/, configuration).
 **Method:** Manual review of every source file, assessed against published security
 standards (OWASP, NIST, IETF RFCs, CWE) and peer-reviewed literature on anomaly

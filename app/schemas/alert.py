@@ -3,6 +3,7 @@ Alert Schemas
 Pydantic models for alert request/response validation.
 """
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 from pydantic import BaseModel, Field
 
@@ -20,6 +21,8 @@ class AlertResponse(AlertBase):
     meter_id: UUID
     reading_id: UUID
     resolved: bool
+    resolved_by: UUID | None
+    resolved_at: datetime | None
     created_at: datetime
 
     class Config:
@@ -46,8 +49,8 @@ class ReadingWithAlerts(BaseModel):
     """Schema for reading response with generated alerts."""
     id: UUID
     meter_id: UUID
-    value: float
-    consumption: float | None
+    value: Decimal
+    consumption: Decimal | None
     recorded_at: datetime
     submitted_by: UUID
     created_at: datetime
